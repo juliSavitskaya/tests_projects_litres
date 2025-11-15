@@ -1,0 +1,35 @@
+{
+  "books": [
+    {
+      "id": 11111,
+      "title": "Война и мир",
+      "author": "Лев Толстой",
+      "price": 599.0,
+      "genre": "Классика"
+    },
+    {
+      "id": 22222,
+      "title": "Мастер и Маргарита",
+      "author": "Михаил Булгаков",
+      "price": 450.0,
+      "genre": "Роман"
+    },
+    {
+      "id": 33333,
+      "title": "Преступление и наказание",
+      "author": "Федор Достоевский",
+      "price": 399.0,
+      "genre": "Классика"
+    }
+  ],
+  "test_users": [
+    {
+      "email": "test1@example.com",
+      "password": "password123"
+    },
+    {
+      "email": "test2@example.com",
+      "password": "password456"
+    }
+  ]
+}
