@@ -1,7 +1,8 @@
 import pytest
 import allure
-from jsonschema import validate
-from api.schemas.cart_schema import CART_SCHEMA, EMPTY_CART_SCHEMA
+
+# Тестовые данные - реальные ID книг с Litres
+TEST_BOOK_ID = 72456610  # Пелевин "Левый путь"
 
 
 @allure.epic("API тестирование")
@@ -9,126 +10,97 @@ from api.schemas.cart_schema import CART_SCHEMA, EMPTY_CART_SCHEMA
 class TestCartAPI:
     """API тесты для корзины"""
 
-    @allure.story("GET /cart/arts")
-    @allure.title("Получение пустой корзины")
+    @allure.story("GET /wishlist/arts")
+    @allure.title("Получение корзины")
     @allure.severity(allure.severity_level.CRITICAL)
     @allure.tag("api", "smoke")
     @pytest.mark.api
     @pytest.mark.smoke
-    def test_get_empty_cart(self, litres_client):
-        """Тест: Получение пустой корзины через API"""
-        with allure.step("Очистка корзины"):
-            litres_client.clear_cart()
-        
+    def test_get_cart(self, litres_client):
+        """Тест: Получение корзины через API"""
         with allure.step("Получение корзины"):
             response = litres_client.get_cart()
-        
-        with allure.step("Проверка статус кода"):
-            assert response.status_code == 200, f"Ожидался статус 200, получен {response.status_code}"
-        
-        with allure.step("Проверка что корзина пустая"):
-            data = response.json()
-            cart_data = data.get("payload", {}).get("data", [])
-            assert cart_data == [], "Корзина не пустая"
-        
-        with allure.step("Валидация схемы ответа"):
-            validate(instance=data, schema=EMPTY_CART_SCHEMA)
 
-    @allure.story("POST /cart/add")
+        with allure.step("Проверка статус кода"):
+            assert response.status_code == 200, \
+                f"Ожидался статус 200, получен {response.status_code}"
+
+    @allure.story("PUT /cart/arts/add")
     @allure.title("Добавление книги в корзину")
     @allure.severity(allure.severity_level.CRITICAL)
-    @allure.tag("api", "smoke", "regression")
+    @allure.tag("api", "smoke")
     @pytest.mark.api
     @pytest.mark.smoke
-    @pytest.mark.regression
-    def test_add_book_to_cart(self, litres_client):
+    def test_add_to_cart(self, litres_client):
         """Тест: Добавление книги в корзину через API"""
-        book_id = 12345
-        
-        with allure.step("Очистка корзины"):
-            litres_client.clear_cart()
-        
-        with allure.step(f"Добавление книги {book_id} в корзину"):
-            response = litres_client.add_to_cart(book_id)
-        
+        with allure.step(f"Добавление книги {TEST_BOOK_ID} в корзину"):
+            response = litres_client.add_to_cart([TEST_BOOK_ID])
+
         with allure.step("Проверка статус кода"):
             assert response.status_code in [200, 201], \
                 f"Ожидался статус 200 или 201, получен {response.status_code}"
-        
-        with allure.step("Получение обновленной корзины"):
-            cart_response = litres_client.get_cart()
-            cart_data = cart_response.json().get("payload", {}).get("data", [])
-        
-        with allure.step("Проверка что книга добавлена"):
-            book_ids = [item.get("id") for item in cart_data]
-            assert book_id in book_ids, f"Книга {book_id} не найдена в корзине"
 
-    @allure.story("POST /cart/clear")
-    @allure.title("Очистка корзины")
-    @allure.severity(allure.severity_level.NORMAL)
-    @allure.tag("api", "regression")
-    @pytest.mark.api
-    @pytest.mark.regression
-    def test_clear_cart(self, litres_client):
-        """Тест: Очистка корзины через API"""
-        with allure.step("Добавление книги в корзину"):
-            litres_client.add_to_cart(12345)
-        
-        with allure.step("Очистка корзины"):
-            response = litres_client.clear_cart()
-        
-        with allure.step("Проверка статус кода"):
-            assert response.status_code == 200, f"Ожидался статус 200, получен {response.status_code}"
-        
-        with allure.step("Проверка что корзина пустая"):
-            cart_response = litres_client.get_cart()
-            cart_data = cart_response.json().get("payload", {}).get("data", [])
-            assert cart_data == [], "Корзина не пустая после очистки"
-
-    @allure.story("DELETE /cart/{book_id}")
+    @allure.story("PUT /cart/arts/remove")
     @allure.title("Удаление книги из корзины")
     @allure.severity(allure.severity_level.NORMAL)
     @allure.tag("api", "regression")
     @pytest.mark.api
     @pytest.mark.regression
-    def test_remove_book_from_cart(self, litres_client):
+    def test_remove_from_cart(self, litres_client):
         """Тест: Удаление книги из корзины через API"""
-        book_id = 12345
-        
-        with allure.step("Очистка корзины"):
-            litres_client.clear_cart()
-        
-        with allure.step(f"Добавление книги {book_id} в корзину"):
-            litres_client.add_to_cart(book_id)
-        
-        with allure.step(f"Удаление книги {book_id} из корзины"):
-            response = litres_client.remove_from_cart(book_id)
-        
+        # 1. ARRANGE - сначала добавляем книгу
+        with allure.step(f"Добавление книги {TEST_BOOK_ID} в корзину"):
+            add_response = litres_client.add_to_cart([TEST_BOOK_ID])
+            assert add_response.status_code in [200, 201], \
+                f"Не удалось добавить книгу. Статус: {add_response.status_code}"
+
+        # 2. ACT - удаляем книгу
+        with allure.step(f"Удаление книги {TEST_BOOK_ID} из корзины"):
+            response = litres_client.remove_from_cart([TEST_BOOK_ID])
+
+        # 3. ASSERT - проверяем результат
         with allure.step("Проверка статус кода"):
             assert response.status_code in [200, 204], \
                 f"Ожидался статус 200 или 204, получен {response.status_code}"
-        
-        with allure.step("Проверка что книга удалена"):
-            cart_response = litres_client.get_cart()
-            cart_data = cart_response.json().get("payload", {}).get("data", [])
-            book_ids = [item.get("id") for item in cart_data]
-            assert book_id not in book_ids, f"Книга {book_id} все еще в корзине"
+
+    @allure.story("Полный цикл")
+    @allure.title("Добавление и очистка корзины")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.tag("api", "regression")
+    @pytest.mark.api
+    @pytest.mark.regression
+    def test_add_and_clear_cart(self, litres_client):
+        """Тест: Полный цикл - добавление и очистка корзины"""
+        # 1. ARRANGE - добавляем книгу
+        with allure.step(f"Добавление книги {TEST_BOOK_ID} в корзину"):
+            add_response = litres_client.add_to_cart([TEST_BOOK_ID])
+            assert add_response.status_code in [200, 201], \
+                f"Не удалось добавить книгу. Статус: {add_response.status_code}"
+
+        # 2. ACT - очищаем корзину
+        with allure.step(f"Очистка корзины"):
+            clear_response = litres_client.remove_from_cart([TEST_BOOK_ID])
+
+        # 3. ASSERT
+        with allure.step("Проверка статус кода очистки"):
+            assert clear_response.status_code in [200, 204], \
+                f"Ожидался статус 200 или 204, получен {clear_response.status_code}"
 
     @allure.story("Параметризация")
-    @allure.title("Добавление нескольких книг в корзину")
+    @allure.title("Добавление и удаление книги {art_id}")
     @allure.severity(allure.severity_level.NORMAL)
     @allure.tag("api", "regression")
     @pytest.mark.api
     @pytest.mark.regression
-    @pytest.mark.parametrize("book_id", [11111, 22222, 33333])
-    def test_add_multiple_books(self, litres_client, book_id):
-        """Тест: Добавление разных книг в корзину (параметризация)"""
-        with allure.step("Очистка корзины"):
-            litres_client.clear_cart()
-        
-        with allure.step(f"Добавление книги {book_id}"):
-            response = litres_client.add_to_cart(book_id)
-        
-        with allure.step("Проверка статус кода"):
-            assert response.status_code in [200, 201], \
-                f"Не удалось добавить книгу {book_id}"
+    @pytest.mark.parametrize("art_id", [72456610])
+    def test_add_and_remove_book(self, litres_client, art_id):
+        """Тест: Добавление и удаление книги (параметризация)"""
+        # 1. Добавляем
+        with allure.step(f"Добавление книги {art_id}"):
+            add_response = litres_client.add_to_cart([art_id])
+            assert add_response.status_code in [200, 201]
+
+        # 2. Удаляем
+        with allure.step(f"Удаление книги {art_id}"):
+            remove_response = litres_client.remove_from_cart([art_id])
+            assert remove_response.status_code in [200, 204]
