@@ -154,7 +154,11 @@ allure serve allure-results
 - ⏱️ Время выполнения тестов
 
 ### Пример отчета
-![Allure Report Example](https://via.placeholder.com/800x400?text=Allure+Report+Example)
+<img width="1392" height="833" alt="Снимок экрана 2025-11-24 в 15 26 49" src="https://github.com/user-attachments/assets/597ac908-3038-41e4-ae73-76f76dc8ef9d" />
+<img width="1392" height="833" alt="Снимок экрана 2025-11-24 в 15 26 56" src="https://github.com/user-attachments/assets/60ce38ad-cbfc-437a-9942-e5b3325db11d" />
+<img width="1392" height="833" alt="Снимок экрана 2025-11-24 в 15 27 05" src="https://github.com/user-attachments/assets/06217b9b-66df-4772-96b8-2752875792a9" />
+
+
 
 ## 🎨 Allure аннотации
 
