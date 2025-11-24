@@ -1,5 +1,4 @@
 import allure
-import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,7 +8,7 @@ from pages.base_page import BasePage
 class SearchPage(BasePage):
     """Класс для работы со страницей поиска"""
 
-    # Локаторы на основе data-testid
+    # Локаторы
     search_results = (By.CSS_SELECTOR, "[data-testid='art__wrapper']")
     book_cover = (By.CSS_SELECTOR, "[data-testid='art__cover']")
     book_title = (By.CSS_SELECTOR, "[data-testid='art__title']")
@@ -19,26 +18,24 @@ class SearchPage(BasePage):
     @allure.step("Получение количества результатов поиска")
     def get_results_count(self) -> int:
         """Получить количество результатов поиска"""
-        time.sleep(3)
-        results = self.find_elements(self.search_results)
-        return len(results)
+        # Ждём появления контента поиска
+        if self.is_element_present(self.search_content):
+            results = self.find_elements(self.search_results)
+            return len(results)
+        return 0
 
     @allure.step("Клик по первой книге в результатах")
     def click_first_book(self):
         """Кликнуть на первую книгу"""
-        time.sleep(2)
-        wait = WebDriverWait(self.browser, 10)
-        first_book = wait.until(EC.presence_of_element_located(self.first_book_link))
-
-        # Получаем href и переходим напрямую (т.к. target="_blank")
+        first_book = self.wait_for_element(self.first_book_link)
         href = first_book.get_attribute("href")
         if href:
+            current_url = self.browser.current_url
             self.browser.get(href)
+            self.wait_for_url_changes(current_url)
         else:
-            # Если href нет, пробуем JS клик
             self.browser.execute_script("arguments[0].click();", first_book)
-
-        time.sleep(2)
+            self.wait_for_url_contains("/book/")
 
     @allure.step("Проверка наличия результатов поиска")
     def has_results(self) -> bool:
