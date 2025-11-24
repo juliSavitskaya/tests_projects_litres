@@ -1,58 +1,53 @@
+import os
 import pytest
-import allure
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from dotenv import load_dotenv
 from api.clients.litres_client import LitresAPIClient
 from pages.main_page import MainPage
 from pages.search_page import SearchPage
 from pages.cart_page import CartPage
 from pages.book_page import BookPage
+from utils import attach
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope='function')
 def browser():
-    """Фикстура для настройки браузера с Allure attachments"""
-    chrome_options = Options()
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option('useAutomationExtension', False)
-    
-    # Для запуска в CI/CD раскомментировать:
-    # chrome_options.add_argument("--headless")
-    # chrome_options.add_argument("--no-sandbox")
-    # chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    """Фикстура для настройки браузера через Selenoid"""
+    options = Options()
+    selenoid_capabilities = {
+        "browserName": "chrome",
+        "browserVersion": "128.0",
+        "selenoid:options": {
+            "enableVNC": True,
+            "enableVideo": True,
+            "enableLog": True
+        },
+        "goog:loggingPrefs": {"browser": "ALL"}
+    }
+    options.capabilities.update(selenoid_capabilities)
+
+    selenoid_login = os.getenv("SELENOID_LOGIN")
+    selenoid_pass = os.getenv("SELENOID_PASS")
+    selenoid_url = os.getenv("SELENOID_URL")
+
+    driver = webdriver.Remote(
+        command_executor=f"https://{selenoid_login}:{selenoid_pass}@{selenoid_url}/wd/hub",
+        options=options
+    )
     driver.implicitly_wait(10)
-    
+
     yield driver
-    
+
     # Добавляем attachments в Allure
-    allure.attach(
-        driver.get_screenshot_as_png(),
-        name="Screenshot",
-        attachment_type=allure.attachment_type.PNG
-    )
-    
-    allure.attach(
-        driver.page_source,
-        name="HTML Source",
-        attachment_type=allure.attachment_type.HTML
-    )
-    
-    try:
-        allure.attach(
-            str(driver.get_log('browser')),
-            name="Browser Logs",
-            attachment_type=allure.attachment_type.TEXT
-        )
-    except:
-        pass
-    
+    attach.add_screenshot(driver)
+    attach.add_logs(driver)
+    attach.add_html(driver)
+    attach.add_video(driver)
+
     driver.quit()
 
 

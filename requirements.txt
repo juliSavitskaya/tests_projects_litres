@@ -1,20 +1,9 @@
-# Testing frameworks
 pytest==7.4.3
 pytest-xdist==3.5.0
-
-# Web automation
 selenium==4.15.2
 webdriver-manager==4.0.1
-
-# API testing
 requests==2.32.4
 jsonschema==4.20.0
-
-# Reporting
 allure-pytest==2.13.2
-
-# Data handling - УБРАЛИ pydantic из-за несовместимости с Python 3.13
 faker==20.1.0
-
-# Utilities
 python-dotenv==1.0.0
