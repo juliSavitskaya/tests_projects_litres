@@ -88,3 +88,8 @@ class BasePage:
         """Ожидание изменения URL"""
         wait = WebDriverWait(self.browser, timeout or self.timeout)
         return wait.until(EC.url_changes(current_url))
+
+    def wait_for_element_invisible(self, locator, timeout=None):
+        """Ожидание исчезновения элемента"""
+        wait = WebDriverWait(self.browser, timeout or self.timeout)
+        return wait.until(EC.invisibility_of_element_located(locator))
